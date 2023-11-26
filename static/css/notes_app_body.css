@@ -1,0 +1,127 @@
+         html{
+        font-family: Arial, sans-serif;
+            }
+body {
+  background-image: url('../../static/assets/notes_app_background2.png');
+  background-size: 100%; 
+  background-position: top center; /* Center the image horizontally and align it to the top */
+  background-repeat: repeat-y; /* Repeat vertically */
+  background-attachment: fixed; /* Fixed in the viewport */
+
+}
+
+        video {
+            margin: 10px, auto;
+            width: 250px;
+            height: auto;
+        }
+
+          .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+
+        }
+
+        .header {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            color: sandybrown;
+        }
+        .wrapper.header {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            color: sandybrown;
+        }
+        .columns {
+            display: flex;
+            width: 98%;
+            margin-top: 20px,auto;
+        }
+
+        .column {
+            padding: 2px;
+            margin-left: 2px;
+            margin-right: 2px;
+            box-sizing: border-box;
+        }
+
+        .column.left {
+            width: 50%;
+            border:    1px solid #000;
+        }
+
+        .column.right {
+        margin: 0 auto; /* Center horizontally */
+        width: 50%;
+        border: 1px solid #000;
+        text-align: center; /* Center video vertically */
+    }
+
+    .column.right video {
+        max-width: 75%;
+        height: auto;
+    }
+    .note{
+       color:sandybrown;
+       font-size:26px;
+    }
+    p{
+       padding-top: -20px;
+    }
+    pre {
+       white-space: pre-wrap;
+      font-size: 2vw; /* Font size is 2% of the viewport height */
+        }
+    a { 
+    font-size: 2vw; /* Font size is 2% of the viewport height */ 
+      }
+    h1{
+        padding-top:20px;
+        font-size: 4vw; /* Font size is 4% of the viewport width */
+      }
+   .column.right pre {
+       white-space: pre-wrap;
+      font-size: 2vw;
+      }
+    .column.left pre {
+       white-space: pre-wrap;
+      font-size: 2vw;
+      }
+    .column.right a {
+       white-space: pre-wrap;
+      font-size: 2.5vw;
+      }
+    .column.left a {
+       white-space: pre-wrap;
+      font-size: 2.5vw;
+      }      
+
+    textarea {
+      margin-left: auto;
+      margin-right: auto;
+      width: 90%; /* Adjust the percentage as needed */
+      height: 90%; /* Adjust the percentage as needed */
+      resize: both; /* Allow the user to resize the textarea */
+      }
+   .column.left input[type="hidden"] {
+      width: 55%; /* Set the width to 95% of the div */
+      box-sizing: border-box; /* Ensure padding and border are included in the width */
+      }
+
+   select {
+     width: 95%;
+     }
+  .paragraph {
+     white-space: pre-wrap;
+     margin: 10px 0;
+     font-size: 1.25vw;
+     border: 1px solid #ccc;
+     padding: 10px;
+    }

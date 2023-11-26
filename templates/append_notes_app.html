@@ -1,0 +1,21 @@
+# filename --- append_notes
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Append Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_app_body.css') }}">
+</head>
+<body>
+<div class="header">
+
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+    <h1>Append Notes</h1>
+    <form method="POST" action="/append_notes">
+        <textarea name="new_content" rows="10" cols="50"></textarea>
+        <br>
+        <input type="submit" value="Append to Notes">
+    </form>
+</body>
+</html>

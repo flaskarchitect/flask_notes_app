@@ -1,0 +1,7 @@
+echo "<pre>" >directorytree.html
+tree >> directorytree.html
+echo "</pre>" >>directorytree.html
+
+echo "<pre>" >templates/NOTES_APPLICATION_tree.html
+tree >> templates/NOTES_APPLICATION_tree.html
+echo "</pre>" >>templates/NOTES_APPLICATION_tree.html

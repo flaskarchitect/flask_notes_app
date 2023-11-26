@@ -1,0 +1,354 @@
+----------
+# filename --- notes_app.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_app_body.css') }}">
+</head>
+<body>
+#add an input for a search term
+<div class="header">
+    <a class="note" href="{{ url_for('index') }}">HOME</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+<form method="POST" action="{{ url_for('search') }}">
+    <input type="text" name="search">
+    <input type="submit" value="Search">
+</form>
+<br />
+
+<div>
+    <pre class="paragraph">
+        {% for paragraph in text %}
+            {{ paragraph }}
+            <br>
+        {% endfor %}
+    </pre>
+    
+</body>
+</html>----------
+# filename --- append_notes
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Append Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_app_body.css') }}">
+</head>
+<body>
+<div class="header">
+
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+    <h1>Append Notes</h1>
+    <form method="POST" action="/append_notes">
+        <textarea name="new_content" rows="10" cols="50"></textarea>
+        <br>
+        <input type="submit" value="Append to Notes">
+    </form>
+</body>
+</html>----------
+#!/home/jack/Desktop/FlaskAppArchitect_Flask_App_Creator/env/bin/python
+# filename ---  notes_app
+from flask import Flask, request, render_template, redirect, url_for, send_from_directory, Response, send_file
+import logging
+from logging.handlers import RotatingFileHandler
+
+app = Flask(__name__)
+app.use_static_path = True
+
+# Configure your custom logger before basic logging configuration
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Set the log level for the watchdog library to WARNING
+logging.getLogger('watchdog').setLevel(logging.WARNING)
+
+# Create a formatter for the log messages
+# Log: time, level, message, path ahd line number
+formatter = logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+
+# Create a file handler to write log messages to a file.
+# If the log file gets over 10000 back it up and start a new app.log
+file_handler = RotatingFileHandler(
+    'Logs/app.log', maxBytes=10000, backupCount=1)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
+logger.debug("This is line: %d",29)
+
+# Create a stderr handler to write log messages to sys.stderr
+console_handler = logging.StreamHandler()
+class WatchdogFilter(logging.Filter):
+    def filter(self, record):
+        # Filter out logs from the 'watchdog' library with level less than WARNING
+        return not (record.name.startswith('watchdog.') and record.levelno < logging.WARNING)
+
+# Add the filter to your logger
+logger.addFilter(WatchdogFilter())# How do I ?
+# open the file static/text/notes_app.txt
+# split at the line "----- -----" 
+# SEARCH THE TEXT FOR "uploads"
+# print the results on an html page
+@app.route('/notes')
+def notes():
+    with open('static/text/notes_app.txt') as f:
+        text = f.read()
+        #paragraph = text.split('----- -----')
+        #search the paragraph for "uploads"
+
+    return render_template('note_app_note.html', text=text)
+ # split at the line "----- -----" and return the second part
+
+@app.route('/', methods=['POST', 'GET'])
+def index():
+    if request.method == 'POST':
+        search_term = request.form.get('search', '').strip()
+        if search_term:
+            with open('static/text/notes_app.txt', 'r') as f:
+                text = f.read()
+                paragraphs = text.split('----- -----')
+
+                # Filter paragraphs that contain the search term
+                matching_paragraphs = [p for p in paragraphs if search_term in p]
+
+            if matching_paragraphs:
+                logger.debug("Matching Paragraphs: ", matching_paragraphs)
+                return render_template('notes_app.html', text=matching_paragraphs)
+            else:
+                return render_template('notes_app.html', text=["No matching results."])
+        else:
+            return render_template('notes_app.html', text=["Enter a search term."])
+
+    return render_template('notes_app.html', text=[])
+
+@app.route('/search', methods=['POST', 'GET'])
+def search():
+    if request.method == 'POST':
+        search_term = request.form.get('search', '').strip()
+        if search_term:
+            with open('static/text/notes_app.txt', 'r') as f:
+                text = f.read()
+                paragraphs = text.split('----- -----')
+
+                # Filter paragraphs that contain the search term
+                matching_paragraphs = [p for p in paragraphs if search_term in p]
+
+            if matching_paragraphs:
+                logger.debug("Matching Paragraphs: ", matching_paragraphs)
+                return render_template('notes_app.html', text=matching_paragraphs)
+            else:
+                return render_template('notes_app.html', text=["No matching results."])
+        else:
+            return render_template('notes_app.html', text=["Enter a search term."])
+
+    return render_template('notes_app.html', text=[])
+
+# Function to add ten dashes before and after the content
+def format_content(content):
+    separator = '----- -----\n'  # Define the separator
+    formatted_content = f'{separator}{content.strip()}'  # Add separator before the content
+    return formatted_content
+
+@app.route('/append_notes', methods=['POST', 'GET'])
+def append_notes():
+    if request.method == 'POST':
+        new_content = request.form.get('new_content', '').strip()
+        if new_content:
+            formatted_content = format_content(new_content)  # Format the content
+            with open('static/text/notes_app.txt', 'a') as f:
+                f.write(formatted_content)
+            return render_template('notes_app.html')
+        else:
+            return 'No content to append'
+
+    return render_template('append_notes_app.html')
+
+
+
+if __name__ == '__main__':
+    print("Starting Python Flask Server For Notes_App \n on port 5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)----------
+# file -- note_app_note.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>App Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/body.css') }}">
+</head>
+<body>
+#add an input for a search term
+notes_app.txt contains information about notes_app, its functions/declarations and its file structure
+<div class="header">
+    <a class="note" href="{{ url_for('index') }}">HOME</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+<form method="POST" action="{{ url_for('search') }}">
+    <input type="text" name="search">
+    <input type="submit" value="Search">
+</form>
+<br />
+
+<div>
+    <pre class="paragraph">
+        {% for paragraph in text %}
+            {{ paragraph }}
+            <br>
+        {% endfor %}
+    </pre>
+    
+</body>
+</html>
+----------
+--- filename /static/css/notes_app_body.css
+html{
+font-family: Arial, sans-serif;
+     }
+body {
+  background-image: url('../../static/assets/notes_app_background2.png');
+  background-size: 100%; 
+  background-position: top center; /* Center the image horizontally and align it to the top */
+  background-repeat: repeat-y; /* Repeat vertically */
+  background-attachment: fixed; /* Fixed in the viewport */
+
+}
+
+        video {
+            margin: 10px, auto;
+            width: 250px;
+            height: auto;
+        }
+
+          .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+
+        }
+
+        .header {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            color: sandybrown;
+        }
+        .wrapper.header {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            color: sandybrown;
+        }
+        .columns {
+            display: flex;
+            width: 98%;
+            margin-top: 20px,auto;
+        }
+
+        .column {
+            padding: 2px;
+            margin-left: 2px;
+            margin-right: 2px;
+            box-sizing: border-box;
+        }
+
+        .column.left {
+            width: 50%;
+            border:    1px solid #000;
+        }
+
+        .column.right {
+        margin: 0 auto; /* Center horizontally */
+        width: 50%;
+        border: 1px solid #000;
+        text-align: center; /* Center video vertically */
+    }
+
+    .column.right video {
+        max-width: 75%;
+        height: auto;
+    }
+    .note{
+       color:sandybrown;
+       font-size:26px;
+    }
+    p{
+       padding-top: -20px;
+    }
+    pre {
+       white-space: pre-wrap;
+      font-size: 2vw; /* Font size is 2% of the viewport height */
+        }
+    a { 
+    font-size: 2vw; /* Font size is 2% of the viewport height */ 
+      }
+    h1{
+        padding-top:20px;
+        font-size: 4vw; /* Font size is 4% of the viewport width */
+      }
+   .column.right pre {
+       white-space: pre-wrap;
+      font-size: 2vw;
+      }
+    .column.left pre {
+       white-space: pre-wrap;
+      font-size: 2vw;
+      }
+    .column.right a {
+       white-space: pre-wrap;
+      font-size: 2.5vw;
+      }
+    .column.left a {
+       white-space: pre-wrap;
+      font-size: 2.5vw;
+      }      
+
+    textarea {
+      margin-left: auto;
+      margin-right: auto;
+      width: 90%; /* Adjust the percentage as needed */
+      height: 90%; /* Adjust the percentage as needed */
+      resize: both; /* Allow the user to resize the textarea */
+      }
+   .column.left input[type="hidden"] {
+      width: 55%; /* Set the width to 95% of the div */
+      box-sizing: border-box; /* Ensure padding and border are included in the width */
+      }
+
+   select {
+     width: 95%;
+     }
+  .paragraph {
+     white-space: pre-wrap;
+     margin: 10px 0;
+     font-size: 1.25vw;
+     border: 1px solid #ccc;
+     padding: 10px;
+    }----------
+/NOTES_APPLICATION/ tree
+.
+├── Logs
+│   └── app.log
+├── notes_app
+├── static
+│   ├── assets
+│   │   ├── notes_app_background2.png
+│   │   └── notes_app_background.png
+│   ├── css
+│   │   └── notes_app_body.css
+│   └── text
+│       └── notes_app.txt
+└── templates
+    ├── append_notes_app.html
+    ├── note_app_note.html
+    └── notes_app.html----------
+The file current_tree was created to update the information displayed.

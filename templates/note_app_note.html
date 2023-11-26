@@ -1,0 +1,31 @@
+# file -- note_app_note.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>App Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/body.css') }}">
+</head>
+<body>
+#add an input for a search term
+notes_app.txt contains information about notes_app, its functions/declarations and its file structure
+<div class="header">
+    <a class="note" href="{{ url_for('index') }}">HOME</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+<form method="POST" action="{{ url_for('search') }}">
+    <input type="text" name="search">
+    <input type="submit" value="Search">
+</form>
+<br />
+
+<div>
+    <pre class="paragraph">
+        {% for paragraph in text %}
+            {{ paragraph }}
+            <br>
+        {% endfor %}
+    </pre>
+    
+</body>
+</html>
