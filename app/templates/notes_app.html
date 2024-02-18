@@ -1,0 +1,30 @@
+<!-- # filename --- notes_app.html-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_app_body.css') }}">
+</head>
+<body>
+
+<div class="header">
+    <h1 class = "pos"> Flask Notes Application</h1>
+    <a class="note" href="{{ url_for('index') }}">HOME</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('search') }}">Search Term: notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+        <a class="note" href="{{ url_for('edit_notes') }}">Edit notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">Append notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('tree') }}">View the directory tree</a>
+</div>
+<form method="POST" action="{{ url_for('search') }}">
+    <input type="text" name="search">
+    <input type="submit" value="Search">
+</form>
+<br />
+
+<div>
+    <pre class="paragraph">
+        {% for paragraph in text %}
+            {{ paragraph }}
+            <br>
+        {% endfor %}
+    </pre>

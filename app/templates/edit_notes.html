@@ -1,0 +1,23 @@
+<!-- file -- note_app_note.html -->
+ <!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Notes</title>
+ <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_app_body.css') }}">
+</head>
+<body>
+<div class="header">
+    <a class="note" href="{{ url_for('index') }}">HOME</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('edit_notes') }}">Edit notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+   <br /> <h1 style="margin-top: 1px;margin-right:auto;margin-left: auto;">Edit Notes</h2>
+</div>
+
+    <form  class="ctr" method="post">
+        <textarea name="content" rows="25" cols="130">{{ text }}</textarea><br>
+        <input type="submit" value="Save">
+    </form>
+</body>
+</html>
+

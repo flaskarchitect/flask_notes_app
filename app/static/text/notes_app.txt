@@ -1,0 +1,548 @@
+----------
+# filename --- notes_app.html ----
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_app_body.css') }}">
+</head>
+<body>
+#add an input for a search term
+<div class="header">
+    <a class="note" href="{{ url_for('index') }}">HOME</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+<form method="POST" action="{{ url_for('search') }}">
+    <input type="text" name="search">
+    <input type="submit" value="Search">
+</form>
+<br />
+
+<div>
+    <pre class="paragraph">
+        {% for paragraph in text %}
+            {{ paragraph }}
+            <br>
+        {% endfor %}
+    </pre>
+    
+</body>
+</html>----------
+# filename --- append_notes
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Append Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notes_app_body.css') }}">
+</head>
+<body>
+<div class="header">
+
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+    <h1>Append Notes</h1>
+    <form method="POST" action="/append_notes">
+        <textarea name="new_content" rows="10" cols="50"></textarea>
+        <br>
+        <input type="submit" value="Append to Notes">
+    </form>
+</body>
+</html>----------
+#!/home/jack/Desktop/FlaskAppArchitect_Flask_App_Creator/env/bin/python
+# filename ---  notes_app
+from flask import Flask, request, render_template, redirect, url_for, send_from_directory, Response, send_file
+import logging
+from logging.handlers import RotatingFileHandler
+
+app = Flask(__name__)
+app.use_static_path = True
+
+# Configure your custom logger before basic logging configuration
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Set the log level for the watchdog library to WARNING
+logging.getLogger('watchdog').setLevel(logging.WARNING)
+
+# Create a formatter for the log messages
+# Log: time, level, message, path ahd line number
+formatter = logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+
+# Create a file handler to write log messages to a file.
+# If the log file gets over 10000 back it up and start a new app.log
+file_handler = RotatingFileHandler(
+    'Logs/app.log', maxBytes=10000, backupCount=1)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
+logger.debug("This is line: %d",29)
+
+# Create a stderr handler to write log messages to sys.stderr
+console_handler = logging.StreamHandler()
+class WatchdogFilter(logging.Filter):
+    def filter(self, record):
+        # Filter out logs from the 'watchdog' library with level less than WARNING
+        return not (record.name.startswith('watchdog.') and record.levelno < logging.WARNING)
+
+# Add the filter to your logger
+logger.addFilter(WatchdogFilter())# How do I ?
+# open the file static/text/notes_app.txt
+# split at the line "----- -----" 
+# SEARCH THE TEXT FOR "uploads"
+# print the results on an html page
+@app.route('/notes')
+def notes():
+    with open('static/text/notes_app.txt') as f:
+        text = f.read()
+        #paragraph = text.split('----- -----')
+        #search the paragraph for "uploads"
+
+    return render_template('note_app_note.html', text=text)
+ # split at the line "----- -----" and return the second part
+
+@app.route('/', methods=['POST', 'GET'])
+def index():
+    if request.method == 'POST':
+        search_term = request.form.get('search', '').strip()
+        if search_term:
+            with open('static/text/notes_app.txt', 'r') as f:
+                text = f.read()
+                paragraphs = text.split('----- -----')
+
+                # Filter paragraphs that contain the search term
+                matching_paragraphs = [p for p in paragraphs if search_term in p]
+
+            if matching_paragraphs:
+                logger.debug("Matching Paragraphs: ", matching_paragraphs)
+                return render_template('notes_app.html', text=matching_paragraphs)
+            else:
+                return render_template('notes_app.html', text=["No matching results."])
+        else:
+            return render_template('notes_app.html', text=["Enter a search term."])
+
+    return render_template('notes_app.html', text=[])
+
+@app.route('/search', methods=['POST', 'GET'])
+def search():
+    if request.method == 'POST':
+        search_term = request.form.get('search', '').strip()
+        if search_term:
+            with open('static/text/notes_app.txt', 'r') as f:
+                text = f.read()
+                paragraphs = text.split('----- -----')
+
+                # Filter paragraphs that contain the search term
+                matching_paragraphs = [p for p in paragraphs if search_term in p]
+
+            if matching_paragraphs:
+                logger.debug("Matching Paragraphs: ", matching_paragraphs)
+                return render_template('notes_app.html', text=matching_paragraphs)
+            else:
+                return render_template('notes_app.html', text=["No matching results."])
+        else:
+            return render_template('notes_app.html', text=["Enter a search term."])
+
+    return render_template('notes_app.html', text=[])
+
+# Function to add ten dashes before and after the content
+def format_content(content):
+    separator = '----- -----\n'  # Define the separator
+    formatted_content = f'{separator}{content.strip()}'  # Add separator before the content
+    return formatted_content
+
+@app.route('/append_notes', methods=['POST', 'GET'])
+def append_notes():
+    if request.method == 'POST':
+        new_content = request.form.get('new_content', '').strip()
+        if new_content:
+            formatted_content = format_content(new_content)  # Format the content
+            with open('static/text/notes_app.txt', 'a') as f:
+                f.write(formatted_content)
+            return render_template('notes_app.html')
+        else:
+            return 'No content to append'
+
+    return render_template('append_notes_app.html')
+
+if __name__ == '__main__':
+    print("Starting Python Flask Server For Notes_App \n on port 5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)----------
+# file -- note_app_note.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>App Notes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/body.css') }}">
+</head>
+<body>
+#add an input for a search term
+notes_app.txt contains information about notes_app, its functions/declarations and its file structure
+<div class="header">
+    <a class="note" href="{{ url_for('index') }}">HOME</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+    <a class="note" href="{{ url_for('search') }}">Search notes_app.txt</a>&nbsp;&nbsp; |&nbsp;&nbsp;
+<a class="note" href="{{ url_for('append_notes') }}">append_notes notes_app.txt</a>
+</div>
+<form method="POST" action="{{ url_for('search') }}">
+    <input type="text" name="search">
+    <input type="submit" value="Search">
+</form>
+<br />
+
+<div>
+    <pre class="paragraph">
+        {% for paragraph in text %}
+            {{ paragraph }}
+            <br>
+        {% endfor %}
+    </pre>
+    
+</body>
+</html>
+----------
+--- filename /static/css/notes_app_body.css
+html{
+font-family: Arial, sans-serif;
+     }
+body {
+  background-image: url('../../static/assets/notes_app_background2.png');
+  background-size: 100%; 
+  background-position: top center; /* Center the image horizontally and align it to the top */
+  background-repeat: repeat-y; /* Repeat vertically */
+  background-attachment: fixed; /* Fixed in the viewport */
+}
+        video {
+            margin: 10px, auto;
+            width: 250px;
+            height: auto;
+        }
+
+          .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+
+        }
+
+        .header {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            color: sandybrown;
+        }
+        .wrapper.header {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            font-size: 26px;
+            color: sandybrown;
+        }
+        .columns {
+            display: flex;
+            width: 98%;
+            margin-top: 20px,auto;
+        }
+
+        .column {
+            padding: 2px;
+            margin-left: 2px;
+            margin-right: 2px;
+            box-sizing: border-box;
+        }
+
+        .column.left {
+            width: 50%;
+            border:    1px solid #000;
+        }
+
+        .column.right {
+        margin: 0 auto; /* Center horizontally */
+        width: 50%;
+        border: 1px solid #000;
+        text-align: center; /* Center video vertically */
+    }
+
+    .column.right video {
+        max-width: 75%;
+        height: auto;
+    }
+    .note{
+       color:sandybrown;
+       font-size:26px;
+    }
+    p{
+       padding-top: -20px;
+    }
+    pre {
+       white-space: pre-wrap;
+      font-size: 2vw; /* Font size is 2% of the viewport height */
+        }
+    a { 
+    font-size: 2vw; /* Font size is 2% of the viewport height */ 
+      }
+    h1{
+        padding-top:20px;
+        font-size: 4vw; /* Font size is 4% of the viewport width */
+      }
+   .column.right pre {
+       white-space: pre-wrap;
+      font-size: 2vw;
+      }
+    .column.left pre {
+       white-space: pre-wrap;
+      font-size: 2vw;
+      }
+    .column.right a {
+       white-space: pre-wrap;
+      font-size: 2.5vw;
+      }
+    .column.left a {
+       white-space: pre-wrap;
+      font-size: 2.5vw;
+      }      
+
+    textarea {
+      margin-left: auto;
+      margin-right: auto;
+      width: 90%; /* Adjust the percentage as needed */
+      height: 90%; /* Adjust the percentage as needed */
+      resize: both; /* Allow the user to resize the textarea */
+      }
+   .column.left input[type="hidden"] {
+      width: 55%; /* Set the width to 95% of the div */
+      box-sizing: border-box; /* Ensure padding and border are included in the width */
+      }
+
+   select {
+     width: 95%;
+     }
+  .paragraph {
+     white-space: pre-wrap;
+     margin: 10px 0;
+     font-size: 1.25vw;
+     border: 1px solid #ccc;
+     padding: 10px;
+    }----------
+/NOTES_APPLICATION/ tree
+.
+├── Logs
+│   └── app.log
+├── notes_app
+├── static
+│   ├── assets
+│   │   ├── notes_app_background2.png
+│   │   └── notes_app_background.png
+│   ├── css
+│   │   └── notes_app_body.css
+│   └── text
+│       └── notes_app.txt
+└── templates
+    ├── append_notes_app.html
+    ├── note_app_note.html
+    └── notes_app.html----------
+The file current_tree was created to update the information displayed.----------
+# This script creates mp4 slideshow with sound from a directory images
+# it takes the argv of the image directory
+# fill in you music path here in the script mp3_files = glob.glob("/mnt/HDD500/collections/Music/*.mp3")
+import subprocess
+import uuid
+import os
+import random
+import glob
+from sys import argv
+import shutil
+from random import randint
+from moviepy.video.compositing.transitions import slide_in
+from moviepy.video.fx import all
+from moviepy.editor import *
+from PIL import Image
+import cv2
+
+# Import the logging module
+import logging
+
+# Configure the logging format
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# Define the directory path
+def slidein(DIR):
+    logging.info("slidein_DIR: %s", DIR)
+    
+    # Corrected line to generate image_files list
+    image_files = glob.glob(os.path.join(DIR, "*.jpg"))
+    logging.info("image_files: %s", image_files)
+    
+    fps = 25  # Frames per second
+    duration = 1  # Duration of each image in seconds
+    size = Image.open(image_files[1]).size
+    random.shuffle(image_files)
+    logging.info(image_files)
+
+    # Create a list of image clips with transitions
+    clips = []
+
+    for i in range(len(image_files)):
+        # Load the image and create a video clip
+        image_clip = ImageClip(image_files[i]).set_duration(duration)
+        direction = random.choice(['right', 'left', 'top', 'bottom'])
+
+        if i > 0:
+            # Add a vertical slide transition to the previous clip
+            transition = slide_in(image_clip, duration=1, side=direction)
+            clips.append(CompositeVideoClip([clips[-1], transition]).set_duration(1))
+
+        clips.append(image_clip)
+
+    # Concatenate the clips to create the final video
+    video = concatenate_videoclips(clips)
+
+    # Set the output video parameters
+    video = video.set_fps(fps)
+    video = video.resize(size)
+
+    # Save the video
+    VIDEO = 'temp/final_output.mp4'
+    video.write_videofile(VIDEO)
+    uid = str(uuid.uuid4())  # Generate a unique ID using uuid
+    mp4_slide =  f"/home/jack/Desktop/HDD500/collections/vids/Zoom_Fast_{uid}.mp4"
+    title_image_path = "/mnt/HDD500/EXPER/static/assets/Title_Image02.png"
+    shutil.copyfile(VIDEO, mp4_slide)
+
+def add_title_image(video_path, hex_color = "#A52A2A"): 
+    # Load the video file and title image
+    video_clip = VideoFileClip(video_path)
+    print(video_clip.size)
+    width, height = video_clip.size
+    title_image_path = "/mnt/HDD500/EXPER/static/assets/Title_Image02.png"
+    # Set the desired size of the padded video (e.g., video width + padding, video height + padding)
+    padded_size = (width + 90, height + 90)
+
+    # Calculate the position for centering the video within the larger frame
+    x_position = (padded_size[0] - video_clip.size[0]) / 2
+    y_position = (padded_size[1] - video_clip.size[1]) / 2
+    #hex_color = "#09723c"
+    # Remove the '#' and split the hex code into R, G, and B components
+    r = int(hex_color[1:3], 16)
+    g = int(hex_color[3:5], 16)
+    b = int(hex_color[5:7], 16)
+
+    # Create an RGB tuple
+    rgb_tuple = (r, g, b)
+
+    # Create a blue ColorClip as the background
+    blue_background = ColorClip(padded_size, color=rgb_tuple)
+
+    # Add the video clip on top of the red background
+    padded_video_clip = CompositeVideoClip([blue_background, video_clip.set_position((x_position, y_position))])
+    padded_video_clip = padded_video_clip.set_duration(video_clip.duration)
+    #title_image_path = "/home/jack/Desktop/EXPER/static/assets/Title_Image02.png"
+    # Load the title image
+    title_image = ImageClip(title_image_path)
+
+    # Set the duration of the title image
+    title_duration = video_clip.duration
+    title_image = title_image.set_duration(title_duration)
+
+    print(video_clip.size)
+    # Position the title image at the center and resize it to fit the video dimensions
+    #title_image = title_image.set_position(("left", "top"))
+    title_image = title_image.set_position((0, -5))
+    #video_clip.size = (620,620)
+    title_image = title_image.resize(padded_video_clip.size)
+
+    # Position the title image at the center and resize it to fit the video dimensions
+    #title_image = title_image.set_position(("center", "center")).resize(video_clip.size)
+
+    # Create a composite video clip with the title image overlay
+    composite_clip = CompositeVideoClip([padded_video_clip, title_image])
+    # Limit the length to 58 seconds
+    composite_clip = composite_clip.subclip(0, title_duration)
+    # Load a random background music
+    mp3_files = glob.glob("/mnt/HDD500/collections/Music/*.mp3")
+    random.shuffle(mp3_files)
+
+    # Now choose a random MP3 file from the shuffled list
+    mp_music = random.choice(mp3_files)
+
+    # Load the background music without setting duration
+    music_clip = AudioFileClip(mp_music)
+    music_clip = music_clip.subclip(0, title_duration)
+    fade_duration = 1.0
+    music_clip = music_clip.audio_fadein(fade_duration).audio_fadeout(fade_duration)
+    # Set the audio of the composite clip to the background music
+    composite_clip = composite_clip.set_audio(music_clip)
+    output_path = 'temp/final_output3.mp4'
+    # Export the final video with the background music
+    composite_clip.write_videofile(output_path)
+    uid = str(uuid.uuid4())  # Generate a unique ID using uuid
+    mp4_file =  f"/home/jack/Desktop/HDD500/collections/vids/{uid}.mp4"
+    shutil.copyfile(output_path, mp4_file)     
+    print(mp4_file)
+    VIDEO = output_path
+    return VIDEO
+
+if __name__ == "__main__":
+    DIR = argv[1]
+    logging.info("Input Directory: %s", DIR)
+    slidein(DIR)
+    video_path = "temp/final_output.mp4"
+    add_title_image(video_path, hex_color = "#A52A2A")----------
+To speed up an MP4 video using ffmpeg, you can use the -vf (video filter) option with the setpts filter. The setpts filter allows you to adjust the playback speed of the video. Here's an example command to double the speed of an MP4 video:
+
+bash
+
+ffmpeg -i input.mp4 -vf "setpts=0.5*PTS" -c:a copy output.mp4
+
+Explanation:
+
+    -i input.mp4: Specifies the input video file.
+    -vf "setpts=0.5*PTS": This video filter adjusts the presentation timestamp (PTS) of each frame. In this case, it multiplies the PTS by 0.5, effectively doubling the speed of the video.
+    -c:a copy: This option copies the audio stream without re-encoding, ensuring that the audio quality remains the same.
+    output.mp4: Specifies the output file.
+
+You can adjust the multiplier in the setpts filter according to your desired speed. For example, to make the video four times faster, you would use setpts=0.25*PTS.
+
+Remember to replace input.mp4 with the actual filename of your input video and specify a suitable output filename.
+
+Feel free to adjust the speed factor as needed for your specific requirements. If you have any specific speed in mind, let me know, and I can provide the corresponding setpts value.----------
+#   sleep 10; alert
+alias FlaskIt='docker run -it --rm -p 5200:5000 -u $UID:$GROUPS -v "$PWD/app:/app" -w "/app" jacknorthrup/flask_kit:v4 python app.py'
+alias PYTHON3='docker run -it --rm -p 5000:5000 -u $UID:$GROUPS -v "$PWD/app:/app" -w "/app" jacknorthrup/flask_kit:v3'
+alias DockerOpen='docker run -it --rm -p 5000:5000 -u $UID:$GROUPS -v "$PWD:/app" -w "$PWD" $1'
+alias FFprobe='ffprobe -hide_banner -pretty -i $1'
+alias mypython='docker run -it --name flaskarchitect -p 5000:5000 -u $UID:$GROUPS -v "$PWD:$PWD" -w "$PWD" jacknorthrup/flask_kit:v4'
+alias dockerenter='docker exec -it -u 0 $1 bash'----------
+~/.bashrc function
+
+FlaskNotes() {
+  cd /mnt/HDD500/flask_notes_app
+  ls
+  docker run -it --name "$1" -p 5200:5000 -u $UID:$GROUPS -v "$PWD/app:/app" -w "/app" jacknorthrup/flask_kit:v4 python app.py
+}----------
+# Create a customer log file
+def logit(message):
+    log_file = "static/Logs/log.txt"  # Replace with the actual path to your log file
+    timestamp = datetime.datetime.now().strftime("%A_%b-%d-%Y_%H-%M-%S")
+    with open(log_file, "a") as log:
+        log.write(f"{timestamp}: {message}\n")----------
+#Create a custon logfile
+debug_directory = "static/Logs"
+if not os.path.exists(debug_directory):
+    # If it doesn't exist, create it
+    os.mkdir(debug_directory)
+    print(f"The '{debug_directory}' directory has been created.")
+else:
+    print(f"The '{debug_directory}' directory already exists.")
+def logit(message):
+    log_file = debug_directory+"/app_log.txt"  # Replace with the actual path to your log file
+    timestamp = datetime.datetime.now().strftime("%A_%b-%d-%Y_%H-%M-%S")
+    with open(log_file, "a") as log:
+        log.write(f"{timestamp}: {message}\n")
+logit("This is a DEBUG message")
